@@ -84,7 +84,7 @@ async def menu_configuracoes(message: Message, id_telegram):
     sala = usuario['salas'][usuario['sala_selecionada']]
     builder.button(text=f'🔄 Situação: {sala['configuracoes']['situacao']}', 
                    callback_data=f'modificar_situacao_{usuario['sala_selecionada']}')
-    builder.button(text=f'🔄 Sala: {usuario['sala_selecionada']}', callback_data='data')
+    builder.button(text=f'🔄 Sala: {usuario['sala_selecionada']}', callback_data='listar_salas')
     builder.button(text='📖 Gatilhos', callback_data='data')
     builder.button(text='📖 Padrões', callback_data='data')
     builder.button(text='⏰ Start Horario', callback_data='data')
@@ -193,6 +193,30 @@ async def modificar_situacao(id_telegram, sala):
         usuario['salas'][sala]['configuracoes']['situacao'] = 'Desligado'
     utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
 
+async def listar_salas(message: Message, id_telegram):
+    usuario = utils_db.dados_usuario(id_telegram)
+    salas = usuario['salas']
+    builder = InlineKeyboardBuilder()
+    for sala in salas:
+        emoji = ''
+        if sala == usuario['sala_selecionada']:
+            emoji = '✅'
+        builder.button(text=f'{sala} {emoji}', callback_data=f'trocar_sala_{sala}')
+        builder.button(text='🗑', callback_data=f'deletar_sala_{sala}')
+    builder.button(text='⬅️ Voltar', callback_data='menu_configuracoes')
+    builder.adjust(2, repeat=True)
+    await message.answer(text='Trocar de Sala.', reply_markup=builder.as_markup())
+
+async def deletar_sala(sala, id_telegram, message: Message):
+    usuario = utils_db.dados_usuario(id_telegram)
+    mensagem = 'Você não pode apagar a sala que esta selecionada, por favor troque de sala'
+    if usuario['sala_selecionada'] == sala:
+        await message.answer(text=mensagem)
+    else:
+        usuario['salas'].pop(sala)
+        utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
+    await listar_salas(message, id_telegram)
+
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
     meu_id = call.from_user.id
@@ -235,6 +259,21 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
         sala = call.data.replace('modificar_situacao_', '')
         await modificar_situacao(meu_id, sala)
         await menu_configuracoes(message, meu_id)
+    
+    if call.data == 'listar_salas':
+        await listar_salas(message, meu_id)
+    
+    if 'trocar_sala_' in call.data:
+        sala = call.data.replace('trocar_sala_', '')
+        usuario = utils_db.dados_usuario(meu_id)
+        usuario['sala_selecionada'] = sala
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await listar_salas(message, meu_id)
+    
+    if 'deletar_sala_' in call.data:
+        sala = call.data.replace('deletar_sala_', '')
+        await deletar_sala(sala, meu_id, message)
+
 
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
