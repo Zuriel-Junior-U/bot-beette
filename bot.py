@@ -79,7 +79,7 @@ async def verificar_usuario(id_telegram):
 async def menu_admistrativo(message: Message):
     builder = InlineKeyboardBuilder()
     builder.button(text='➕ Cadastar Usuario', callback_data='cadastrar_usuario')
-    builder.button(text='📖 Listar Usuarios', callback_data='data')
+    builder.button(text='📖 Listar Usuarios', callback_data='listar_usuarios')
     builder.button(text='⬅️ Voltar', callback_data='menu_principal')
     builder.adjust(1, 1, 1)
     await message.answer(text='Menu Admistrativo', reply_markup=builder.as_markup())
@@ -118,6 +118,17 @@ async def final_cadastro_cliente(message: Message, state: FSMContext) -> None:
                          reply_markup=ReplyKeyboardRemove())
     await menu_admistrativo(message)
 
+async def listar_usuarios(message: Message):
+    builder = InlineKeyboardBuilder()
+    usuarios = utils_db.obter_usuarios()
+    for usuario in usuarios:
+        builder.button(text=f'{usuario[0]}', callback_data='data')
+        builder.button(text='🗑', callback_data=f'deletar_usuario_{usuario[0]}')
+        builder.adjust(2)
+    builder.button(text='⬅️ Voltar', callback_data='meu_admistrativo')
+    builder.adjust(1)
+    await message.answer(text='Lista de Clientes', reply_markup=builder.as_markup())
+
 
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
@@ -141,6 +152,14 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     if call.data == 'cadastrar_usuario' and usuario_liberado:
         await cadastrar_usuario(message, state)
     
+    if call.data == 'listar_usuarios' and usuario_liberado:
+        await listar_usuarios(message)
+    
+    if 'deletar_usuario_' in call.data:
+        usuario = call.data.replace('deletar_usuario_', '')
+        utils_db.deletar_usuario(usuario)
+        await menu_admistrativo(message)
+
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
         await command_start(message, state)
