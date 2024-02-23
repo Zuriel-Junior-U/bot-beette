@@ -28,6 +28,17 @@ def criar_banco_dados():
     conn.commit()
     conn.close()
 
+# CREAT (C)
+def cadastrar_usuario(id_telegram, tipo_cliente):
+    dados_usurio['tipo_usuario'] = tipo_cliente
+    conn = sqlite3.connect('informacoes.db')
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO usuarios (id_telegram, dados_usuario) VALUES (?, ?)",
+                   (id_telegram,  json.dumps(dados_usurio)))
+    conn.commit()
+    conn.close()
+
 if __name__ == '__main__':
     #criar_banco_dados()
+    #cadastrar_usuario('123456', 'user')
     pass
