@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import json
 import sys
 import os
 
@@ -33,7 +34,27 @@ dp.include_router(form_router)
 class Form(StatesGroup):
     id_usuario = State()
     tipo_usuario = State()
+    id_sala = State()
 
+dados_salas = {
+    'configuracoes': {
+        'gales': 0,
+        'start_horario': ['Desativado', ''],
+        'stop_horario': ['Desativado', ''],
+        'limite_wins': 1,
+        'pular_pedra_win': 'Sim',
+        'situacao': 'Desligado',
+    },
+    'estrategias': {
+        'gatilhos': {
+        },
+        'padroes': {
+        },
+        'buscadores': {
+        }
+    }
+        
+}
 
 @form_router.message(CommandStart())
 async def command_start(message: Message, state: FSMContext) -> None:
@@ -54,8 +75,13 @@ async def menu_principal(message: Message, id_telegram):
         builder.adjust(2, 1)
     await message.answer(text='Menu Principal', reply_markup=builder.as_markup())
 
-async def menu_configuracoes(message: Message):
+async def menu_configuracoes(message: Message, id_telegram):
+    usuario = utils_db.dados_usuario(id_telegram)
     builder = InlineKeyboardBuilder()
+    if usuario['salas'] == {}:
+        builder.button(text='➕ Cadastrar Sala', callback_data='cadastrar_sala')
+        return await message.answer('Menu Configurações', reply_markup=builder.as_markup())
+    
     builder.button(text='🔄 Situação: Desligado', callback_data='data')
     builder.button(text='🔄 Sala: 123', callback_data='data')
     builder.button(text='📖 Gatilhos', callback_data='data')
@@ -65,7 +91,7 @@ async def menu_configuracoes(message: Message):
     builder.button(text='✖️ Gales', callback_data='data')
     builder.button(text='⏹ LMT', callback_data='data')
     builder.button(text='🔄 PLP', callback_data='data')
-    builder.button(text='➕ Cadastrar Sala', callback_data='data')
+    builder.button(text='➕ Cadastrar Sala', callback_data='cadastrar_sala')
     builder.button(text='⬅️ Voltar', callback_data='menu_principal')
     builder.adjust(2, 2, 2, 2, 2, 1)
     await message.answer(text='Menu Configurações', reply_markup=builder.as_markup())
@@ -129,6 +155,23 @@ async def listar_usuarios(message: Message):
     builder.adjust(1)
     await message.answer(text='Lista de Clientes', reply_markup=builder.as_markup())
 
+async def cadastrar_sala(message: Message, state: FSMContext):
+    await state.set_state(Form.id_sala)
+    await message.answer(
+        "Informe o ID da sala: "
+    )
+
+@form_router.message(Form.id_sala)
+async def final_cadastro_sala(message: Message, state: FSMContext) -> None:
+    await state.update_data(id_grup=message.text)
+    data = await state.get_data()
+    meu_id = message.from_user.id
+    usuario = utils_db.dados_usuario(meu_id)
+    usuario['sala_selecionada'] = data['id_grup']
+    usuario['salas'][data['id_grup']] = dados_salas
+    utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+    await state.clear()
+    await menu_configuracoes(message, meu_id)
 
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
@@ -144,7 +187,7 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
         await menu_principal(message, meu_id)
 
     if call.data == 'menu_configuracoes' and usuario_liberado:
-        await menu_configuracoes(message)
+        await menu_configuracoes(message, meu_id)
     
     if call.data == 'meu_admistrativo' and usuario_liberado:
         await menu_admistrativo(message)
@@ -159,6 +202,9 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
         usuario = call.data.replace('deletar_usuario_', '')
         utils_db.deletar_usuario(usuario)
         await menu_admistrativo(message)
+    
+    if call.data == 'cadastrar_sala':
+        await cadastrar_sala(message, state)
 
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
