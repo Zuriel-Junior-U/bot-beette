@@ -45,7 +45,7 @@ async def menu_principal(message: Message, id_telegram):
     builder.button(text='🆘 Suporte', callback_data='data')
     builder.adjust(2)
     if usuario['tipo_usuario'] == 'adm':
-        builder.button(text='👮‍♀️ Administrador', callback_data='data')
+        builder.button(text='👮‍♀️ Administrador', callback_data='meu_admistrativo')
         builder.adjust(2, 1)
     await message.answer(text='Menu Principal', reply_markup=builder.as_markup())
 
@@ -71,6 +71,14 @@ async def verificar_usuario(id_telegram):
         return True
     return False
 
+async def menu_admistrativo(message: Message):
+    builder = InlineKeyboardBuilder()
+    builder.button(text='➕ Cadastar Usuario', callback_data='data')
+    builder.button(text='📖 Listar Usuarios', callback_data='data')
+    builder.button(text='⬅️ Voltar', callback_data='menu_principal')
+    builder.adjust(1, 1, 1)
+    await message.answer(text='Menu Admistrativo', reply_markup=builder.as_markup())
+
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
     meu_id = call.from_user.id
@@ -86,6 +94,9 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
 
     if call.data == 'menu_configuracoes' and usuario_liberado:
         await menu_configuracoes(message)
+    
+    if call.data == 'meu_admistrativo' and usuario_liberado:
+        await menu_admistrativo(message)
     
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
