@@ -14,7 +14,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import (
     KeyboardButton,
     Message,
-    ReplyKeyboardMarkup
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove
 )
 
 import dotenv
@@ -28,6 +29,10 @@ TOKEN = os.getenv('TOKEN')
 form_router = Router()
 dp = Dispatcher()
 dp.include_router(form_router)
+
+class Form(StatesGroup):
+    id_usuario = State()
+    tipo_usuario = State()
 
 
 @form_router.message(CommandStart())
@@ -73,11 +78,46 @@ async def verificar_usuario(id_telegram):
 
 async def menu_admistrativo(message: Message):
     builder = InlineKeyboardBuilder()
-    builder.button(text='➕ Cadastar Usuario', callback_data='data')
+    builder.button(text='➕ Cadastar Usuario', callback_data='cadastrar_usuario')
     builder.button(text='📖 Listar Usuarios', callback_data='data')
     builder.button(text='⬅️ Voltar', callback_data='menu_principal')
     builder.adjust(1, 1, 1)
     await message.answer(text='Menu Admistrativo', reply_markup=builder.as_markup())
+
+async def cadastrar_usuario(message: Message, state: FSMContext) -> None:
+    await state.set_state(Form.id_usuario)
+    await message.answer(
+        "Informe o ID do usuario: "
+    )
+
+@form_router.message(Form.id_usuario)
+async def process_cadastrar_usuario(message: Message, state: FSMContext) -> None:
+    await state.update_data(id_telegram=message.text)
+    await state.set_state(Form.tipo_usuario)
+    await message.answer(
+        f"Que tipo de usuario ele sera?",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="cliente"),
+                    KeyboardButton(text="adm"),
+                ]
+            ],
+            resize_keyboard=True,
+            reply_markup=None
+        ),
+    )
+
+@form_router.message(Form.tipo_usuario)
+async def final_cadastro_cliente(message: Message, state: FSMContext) -> None:
+    await state.update_data(id_grup=message.text)
+    data = await state.get_data()
+    utils_db.cadastrar_usuario(data['id_telegram'], data['id_grup'])
+    await state.clear()
+    await message.answer(f"Usuário cadastrado como: {data['id_grup']}", 
+                         reply_markup=ReplyKeyboardRemove())
+    await menu_admistrativo(message)
+
 
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
@@ -97,6 +137,9 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     
     if call.data == 'meu_admistrativo' and usuario_liberado:
         await menu_admistrativo(message)
+    
+    if call.data == 'cadastrar_usuario' and usuario_liberado:
+        await cadastrar_usuario(message, state)
     
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
