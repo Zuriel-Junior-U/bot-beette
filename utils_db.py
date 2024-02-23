@@ -50,8 +50,17 @@ def dados_usuario(id_telegram):
     else:
         return None
 
+# UPDATE (U)
+def atualizar_usuario(id_telegram, campo, novo_valor):
+    conn = sqlite3.connect('informacoes.db')
+    cursor = conn.cursor()
+    cursor.execute(f"UPDATE usuarios SET {campo} = ? WHERE id_telegram = ?", (novo_valor, id_telegram))
+    conn.commit()
+    conn.close()
+
 if __name__ == '__main__':
     #criar_banco_dados()
     #cadastrar_usuario('123456', 'user')
     #print(dados_usuario('12323'))
+    #atualizar_usuario('12323', 'dados_usuario', 'dado atualizado')
     pass
