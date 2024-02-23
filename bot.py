@@ -81,16 +81,16 @@ async def menu_configuracoes(message: Message, id_telegram):
     if usuario['salas'] == {}:
         builder.button(text='➕ Cadastrar Sala', callback_data='cadastrar_sala')
         return await message.answer('Menu Configurações', reply_markup=builder.as_markup())
-    
-    builder.button(text='🔄 Situação: Desligado', callback_data='data')
-    builder.button(text='🔄 Sala: 123', callback_data='data')
+    sala = usuario['salas'][usuario['sala_selecionada']]
+    builder.button(text=f'🔄 Situação: {sala['configuracoes']['situacao']}', callback_data='data')
+    builder.button(text=f'🔄 Sala: {usuario['sala_selecionada']}', callback_data='data')
     builder.button(text='📖 Gatilhos', callback_data='data')
     builder.button(text='📖 Padrões', callback_data='data')
     builder.button(text='⏰ Start Horario', callback_data='data')
     builder.button(text='⏰ Stop Horario', callback_data='data')
     builder.button(text='✖️ Gales', callback_data='data')
     builder.button(text='⏹ LMT', callback_data='data')
-    builder.button(text='🔄 PLP', callback_data='data')
+    builder.button(text=f'🔄 PLP: {sala['configuracoes']['pular_pedra_win']}', callback_data='data')
     builder.button(text='➕ Cadastrar Sala', callback_data='cadastrar_sala')
     builder.button(text='⬅️ Voltar', callback_data='menu_principal')
     builder.adjust(2, 2, 2, 2, 2, 1)
