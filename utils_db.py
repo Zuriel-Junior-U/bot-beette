@@ -58,9 +58,18 @@ def atualizar_usuario(id_telegram, campo, novo_valor):
     conn.commit()
     conn.close()
 
+# DELETE (D)
+def deletar_usuario(id_telegram):
+    conn = sqlite3.connect('informacoes.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM usuarios WHERE id_telegram = ?", (id_telegram,))
+    conn.commit()
+    conn.close()
+
 if __name__ == '__main__':
     #criar_banco_dados()
-    #cadastrar_usuario('123456', 'user')
+    #cadastrar_usuario('12323', 'user')
     #print(dados_usuario('12323'))
     #atualizar_usuario('12323', 'dados_usuario', 'dado atualizado')
+    #deletar_usuario('12323')
     pass
