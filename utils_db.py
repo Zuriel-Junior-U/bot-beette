@@ -66,10 +66,20 @@ def deletar_usuario(id_telegram):
     conn.commit()
     conn.close()
 
+# EXTRA (READ)
+def obter_usuarios():
+    conn = sqlite3.connect('informacoes.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_telegram FROM usuarios")
+    resultados = cursor.fetchall()
+    conn.close()
+    return resultados
+
 if __name__ == '__main__':
     #criar_banco_dados()
     #cadastrar_usuario('12323', 'user')
     #print(dados_usuario('12323'))
     #atualizar_usuario('12323', 'dados_usuario', 'dado atualizado')
     #deletar_usuario('12323')
+    #print(obter_usuarios())
     pass
