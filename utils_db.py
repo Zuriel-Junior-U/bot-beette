@@ -38,7 +38,20 @@ def cadastrar_usuario(id_telegram, tipo_cliente):
     conn.commit()
     conn.close()
 
+# READ (R)
+def dados_usuario(id_telegram):
+    conn = sqlite3.connect('informacoes.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT dados_usuario FROM usuarios WHERE id_telegram = ?", (id_telegram,))
+    resultado = cursor.fetchone()
+    conn.close()
+    if resultado:
+        return json.loads(resultado[0])
+    else:
+        return None
+
 if __name__ == '__main__':
     #criar_banco_dados()
     #cadastrar_usuario('123456', 'user')
+    #print(dados_usuario('12323'))
     pass
