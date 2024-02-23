@@ -90,7 +90,8 @@ async def menu_configuracoes(message: Message, id_telegram):
     builder.button(text='⏰ Stop Horario', callback_data='data')
     builder.button(text='✖️ Gales', callback_data='data')
     builder.button(text='⏹ LMT', callback_data='data')
-    builder.button(text=f'🔄 PLP: {sala['configuracoes']['pular_pedra_win']}', callback_data='data')
+    builder.button(text=f'🔄 PLP: {sala['configuracoes']['pular_pedra_win']}', 
+                   callback_data=f'modificar_plp_{usuario['sala_selecionada']}')
     builder.button(text='➕ Cadastrar Sala', callback_data='cadastrar_sala')
     builder.button(text='⬅️ Voltar', callback_data='menu_principal')
     builder.adjust(2, 2, 2, 2, 2, 1)
@@ -173,6 +174,15 @@ async def final_cadastro_sala(message: Message, state: FSMContext) -> None:
     await state.clear()
     await menu_configuracoes(message, meu_id)
 
+async def modificar_plp(id_telegram, sala):
+    usuario = utils_db.dados_usuario(id_telegram)
+    situacao_plp = usuario['salas'][sala]['configuracoes']['pular_pedra_win']
+    if situacao_plp == 'Sim':
+        usuario['salas'][sala]['configuracoes']['pular_pedra_win'] = 'Nao'
+    else:
+        usuario['salas'][sala]['configuracoes']['pular_pedra_win'] = 'Sim'
+    utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
+
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
     meu_id = call.from_user.id
@@ -205,6 +215,11 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     
     if call.data == 'cadastrar_sala':
         await cadastrar_sala(message, state)
+    
+    if 'modificar_plp' in call.data:
+        sala = call.data.replace('modificar_plp_', '')
+        await modificar_plp(meu_id, sala)
+        await menu_configuracoes(message, meu_id)
 
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
