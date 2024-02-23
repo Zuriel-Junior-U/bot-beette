@@ -36,6 +36,16 @@ async def command_start(message: Message, state: FSMContext) -> None:
     builder.adjust(1, 1)
     await message.answer(text='Seja bem Vindo!', reply_markup=builder.as_markup())
 
+@form_router.callback_query()
+async def my_call(call: types.CallbackQuery, state: FSMContext):
+    meu_id = call.from_user.id
+    message = call.message
+    await call.bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+
+    if call.data == 'verificar_id':
+        await call.message.answer(f'ID: {meu_id}')
+        await command_start(message, state)
+
 async def main() -> None:
     bot = Bot(TOKEN)
     await dp.start_polling(bot)
