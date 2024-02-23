@@ -38,10 +38,27 @@ async def command_start(message: Message, state: FSMContext) -> None:
 
 async def menu_principal(message: Message):
     builder = InlineKeyboardBuilder()
-    builder.button(text='⚙️ Configurações', callback_data='data')
+    builder.button(text='⚙️ Configurações', callback_data='menu_configuracoes')
     builder.button(text='🆘 Suporte', callback_data='data')
     builder.adjust(2)
     await message.answer(text='Menu Principal', reply_markup=builder.as_markup())
+
+async def menu_configuracoes(message: Message):
+    builder = InlineKeyboardBuilder()
+    builder.button(text='🔄 Situação: Desligado', callback_data='data')
+    builder.button(text='🔄 Sala: 123', callback_data='data')
+    builder.button(text='📖 Gatilhos', callback_data='data')
+    builder.button(text='📖 Padrões', callback_data='data')
+    builder.button(text='⏰ Start Horario', callback_data='data')
+    builder.button(text='⏰ Stop Horario', callback_data='data')
+    builder.button(text='✖️ Gales', callback_data='data')
+    builder.button(text='⏹ LMT', callback_data='data')
+    builder.button(text='🔄 PLP', callback_data='data')
+    builder.button(text='➕ Cadastrar Sala', callback_data='data')
+    builder.button(text='⬅️ Voltar', callback_data='menu_principal')
+    builder.adjust(2, 2, 2, 2, 2, 1)
+
+    await message.answer(text='Menu Configurações', reply_markup=builder.as_markup())
 
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
@@ -54,6 +71,9 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
         await command_start(message, state)
     if call.data == 'menu_principal':
         await menu_principal(message)
+
+    if call.data == 'menu_configuracoes':
+        await menu_configuracoes(message)
 
 async def main() -> None:
     bot = Bot(TOKEN)
