@@ -38,11 +38,15 @@ async def command_start(message: Message, state: FSMContext) -> None:
     builder.adjust(1, 1)
     await message.answer(text='Seja bem Vindo!', reply_markup=builder.as_markup())
 
-async def menu_principal(message: Message):
+async def menu_principal(message: Message, id_telegram):
+    usuario = utils_db.dados_usuario(id_telegram)
     builder = InlineKeyboardBuilder()
     builder.button(text='⚙️ Configurações', callback_data='menu_configuracoes')
     builder.button(text='🆘 Suporte', callback_data='data')
     builder.adjust(2)
+    if usuario['tipo_usuario'] == 'adm':
+        builder.button(text='👮‍♀️ Administrador', callback_data='data')
+        builder.adjust(2, 1)
     await message.answer(text='Menu Principal', reply_markup=builder.as_markup())
 
 async def menu_configuracoes(message: Message):
@@ -78,7 +82,7 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
         await call.message.answer(f'ID: {meu_id}')
         await command_start(message, state)
     if call.data == 'menu_principal' and usuario_liberado:
-        await menu_principal(message)
+        await menu_principal(message, meu_id)
 
     if call.data == 'menu_configuracoes' and usuario_liberado:
         await menu_configuracoes(message)
