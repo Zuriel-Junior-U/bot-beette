@@ -19,6 +19,8 @@ from aiogram.types import (
 
 import dotenv
 
+import utils_db
+
 
 dotenv.load_dotenv()
 
@@ -57,23 +59,33 @@ async def menu_configuracoes(message: Message):
     builder.button(text='➕ Cadastrar Sala', callback_data='data')
     builder.button(text='⬅️ Voltar', callback_data='menu_principal')
     builder.adjust(2, 2, 2, 2, 2, 1)
-
     await message.answer(text='Menu Configurações', reply_markup=builder.as_markup())
+
+async def verificar_usuario(id_telegram):
+    usuarios = utils_db.obter_usuarios()
+    if str(id_telegram) in str(usuarios):
+        return True
+    return False
 
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
     meu_id = call.from_user.id
     message = call.message
+    usuario_liberado = await verificar_usuario(meu_id)
     await call.bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
     if call.data == 'verificar_id':
         await call.message.answer(f'ID: {meu_id}')
         await command_start(message, state)
-    if call.data == 'menu_principal':
+    if call.data == 'menu_principal' and usuario_liberado:
         await menu_principal(message)
 
-    if call.data == 'menu_configuracoes':
+    if call.data == 'menu_configuracoes' and usuario_liberado:
         await menu_configuracoes(message)
+    
+    if not usuario_liberado:
+        await call.message.answer('usuario não cadastrado')
+        await command_start(message, state)
 
 async def main() -> None:
     bot = Bot(TOKEN)
