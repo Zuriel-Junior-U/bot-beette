@@ -34,6 +34,7 @@ async def command_start(message: Message, state: FSMContext) -> None:
     builder.button(text=f"Menu Principal", callback_data=f"menu")
     builder.button(text='Verificar ID', callback_data='verificar_id')
     builder.adjust(1, 1)
+    await message.answer(text='Seja bem Vindo!', reply_markup=builder.as_markup())
 
 async def main() -> None:
     bot = Bot(TOKEN)
