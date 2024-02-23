@@ -82,7 +82,8 @@ async def menu_configuracoes(message: Message, id_telegram):
         builder.button(text='➕ Cadastrar Sala', callback_data='cadastrar_sala')
         return await message.answer('Menu Configurações', reply_markup=builder.as_markup())
     sala = usuario['salas'][usuario['sala_selecionada']]
-    builder.button(text=f'🔄 Situação: {sala['configuracoes']['situacao']}', callback_data='data')
+    builder.button(text=f'🔄 Situação: {sala['configuracoes']['situacao']}', 
+                   callback_data=f'modificar_situacao_{usuario['sala_selecionada']}')
     builder.button(text=f'🔄 Sala: {usuario['sala_selecionada']}', callback_data='data')
     builder.button(text='📖 Gatilhos', callback_data='data')
     builder.button(text='📖 Padrões', callback_data='data')
@@ -183,6 +184,15 @@ async def modificar_plp(id_telegram, sala):
         usuario['salas'][sala]['configuracoes']['pular_pedra_win'] = 'Sim'
     utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
 
+async def modificar_situacao(id_telegram, sala):
+    usuario = utils_db.dados_usuario(id_telegram)
+    situacao = usuario['salas'][sala]['configuracoes']['situacao']
+    if situacao == 'Desligado':
+        usuario['salas'][sala]['configuracoes']['situacao'] = 'Ligado'
+    else:
+        usuario['salas'][sala]['configuracoes']['situacao'] = 'Desligado'
+    utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
+
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
     meu_id = call.from_user.id
@@ -219,6 +229,11 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     if 'modificar_plp' in call.data:
         sala = call.data.replace('modificar_plp_', '')
         await modificar_plp(meu_id, sala)
+        await menu_configuracoes(message, meu_id)
+    
+    if 'modificar_situacao' in call.data:
+        sala = call.data.replace('modificar_situacao_', '')
+        await modificar_situacao(meu_id, sala)
         await menu_configuracoes(message, meu_id)
 
     if not usuario_liberado:
