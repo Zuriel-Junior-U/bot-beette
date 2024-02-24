@@ -251,6 +251,8 @@ async def menu_gatilhos(message: Message, id_telegram):
     gatilhos = usuario['salas'][sala]['estrategias']['gatilhos']
     builder.button(text='➕ Cadastrar Gatilho', callback_data='cadastrar_gatilho')
     if gatilhos == {}:
+        usuario['salas'][sala]['estrategias']['gatilhos'] = {'g0': []}
+        utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
         return await message.answer(text='Menu Gatilhos', reply_markup=builder.as_markup())
     builder.button(text='📖 Listar Gatilhos', callback_data='listar_gatilhos')
     builder.button(text='⬅️ Voltar', callback_data='menu_configuracoes')
@@ -444,10 +446,11 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     if call.data == 'cadastrar_gatilho':
         usuario = utils_db.dados_usuario(meu_id)
         sala = usuario['sala_selecionada']
-        index_gatilho = len(usuario['salas'][sala]['estrategias']['gatilhos']) 
-        usuario['salas'][sala]['estrategias']['gatilhos'][f'g{index_gatilho}'] = []
+        gatilhos = [gatilho for gatilho in usuario['salas'][sala]['estrategias']['gatilhos']][-1]
+        gatilho_atual = int(gatilhos.replace('g', '')) + 1
+        usuario['salas'][sala]['estrategias']['gatilhos'][f'g{gatilho_atual}'] = []
         utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
-        await cadastrar_gatilho(message, f'g{index_gatilho}', meu_id)
+        await cadastrar_gatilho(message, f'g{gatilho_atual}', meu_id)
     
     if 'gatilho_' in call.data:
         gatilho = call.data.replace('gatilho_', '')
