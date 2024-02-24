@@ -85,7 +85,7 @@ async def menu_configuracoes(message: Message, id_telegram):
     builder.button(text=f'🔄 Situação: {sala['configuracoes']['situacao']}', 
                    callback_data=f'modificar_situacao_{usuario['sala_selecionada']}')
     builder.button(text=f'🔄 Sala: {usuario['sala_selecionada']}', callback_data='listar_salas')
-    builder.button(text='📖 Gatilhos', callback_data='data')
+    builder.button(text='📖 Gatilhos', callback_data='menu_gatilhos')
     builder.button(text='📖 Padrões', callback_data='data')
     builder.button(text='⏰ Start Horario', callback_data='data')
     builder.button(text='⏰ Stop Horario', callback_data='data')
@@ -244,6 +244,46 @@ async def menu_lmt(message: Message, valor):
     builder.adjust(3, 3, 3, 2, 1)
     await message.answer(text=f'LMT Atual: {valor}', reply_markup=builder.as_markup())
 
+async def menu_gatilhos(message: Message, id_telegram):
+    builder = InlineKeyboardBuilder()
+    usuario = utils_db.dados_usuario(id_telegram)
+    sala = usuario['sala_selecionada']
+    gatilhos = usuario['salas'][sala]['estrategias']['gatilhos']
+    builder.button(text='➕ Cadastrar Gatilho', callback_data='cadastrar_gatilho')
+    if gatilhos == {}:
+        return await message.answer(text='Menu Gatilhos', reply_markup=builder.as_markup())
+    builder.button(text='📖 Listar Gatilhos', callback_data='listar_gatilhos')
+    builder.button(text='⬅️ Voltar', callback_data='menu_configuracoes')
+    builder.adjust(1, repeat=True)
+    await message.answer(text='Menu Gatilhos', reply_markup=builder.as_markup())
+
+async def cadastrar_gatilho(message: Message, gatilho, id_telegram):
+    builder = InlineKeyboardBuilder()
+    usuario = utils_db.dados_usuario(id_telegram)
+    sala = usuario['sala_selecionada']
+    builder.button(text='➕ ⚫️', callback_data=f'gatilho_black_{gatilho}')
+    builder.button(text='➕ 🟡', callback_data=f'gatilho_yellow_{gatilho}')
+    builder.button(text='➕ ⚪️', callback_data=f'gatilho_white_{gatilho}')
+    builder.button(text='⬅️ Voltar', callback_data='menu_gatilhos')
+    builder.adjust(3, 1)
+    mostrar_gatilho = usuario['salas'][sala]['estrategias']['gatilhos'][gatilho]
+    mostrar_gatilho = str(mostrar_gatilho).replace('[', '').replace(']', '').replace("'", '')
+    await message.answer(text=f'Gatilho Atual: {mostrar_gatilho}', 
+                         reply_markup=builder.as_markup())
+
+async def listar_gatilhos(message: Message, id_telegram):
+    builder = InlineKeyboardBuilder()
+    usuario = utils_db.dados_usuario(id_telegram)
+    sala = usuario['sala_selecionada']
+    gatilhos = usuario['salas'][sala]['estrategias']['gatilhos']
+    for gatilho in gatilhos:
+        builder.button(text=f'{gatilho}', callback_data='data')
+        builder.button(text='🗑', callback_data=f'deletar_ga_{gatilho}')
+        builder.button(text='📝', callback_data=f'editar_ga_{gatilho}')
+    builder.button(text='⬅️ Voltar', callback_data='menu_gatilhos')
+    builder.adjust(3, repeat=True)
+    await message.answer(text='Lista Gatilhos', reply_markup=builder.as_markup())
+
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
     meu_id = call.from_user.id
@@ -348,6 +388,43 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
         usuario['salas'][sala]['configuracoes']['limite_wins'] = 0
         utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
         await menu_lmt(message, 0)
+    
+    if call.data == 'menu_gatilhos':
+        await menu_gatilhos(message, meu_id)
+    
+    if call.data == 'cadastrar_gatilho':
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        index_gatilho = len(usuario['salas'][sala]['estrategias']['gatilhos'])
+        usuario['salas'][sala]['estrategias']['gatilhos'][f'g{index_gatilho}'] = []
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await cadastrar_gatilho(message, f'g{index_gatilho}', meu_id)
+    
+    if 'gatilho_' in call.data:
+        gatilho = call.data.replace('gatilho_', '')
+        gatilho = gatilho.replace('black_', '').replace('white_', '').replace('yellow_', '')
+        cor = call.data.replace('gatilho_', '').replace(gatilho, '').replace('_', '')
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        usuario['salas'][sala]['estrategias']['gatilhos'][gatilho].append(cor)
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await cadastrar_gatilho(message, gatilho, meu_id)
+    
+    if call.data == 'listar_gatilhos':
+        await listar_gatilhos(message, meu_id)
+    
+    if 'deletar_ga_' in call.data:
+        gatilho = call.data.replace('deletar_ga_', '')
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        usuario['salas'][sala]['estrategias']['gatilhos'].pop(gatilho)
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await listar_gatilhos(message, meu_id)
+    
+    if 'editar_ga_' in call.data:
+        gatilho = call.data.replace('editar_ga_', '')
+        await cadastrar_gatilho(message, gatilho, meu_id)
+
 
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
