@@ -309,8 +309,9 @@ async def cadastrar_padroes(message: Message, padroes, id_telegram):
     builder.button(text='➕ ⚫️', callback_data=f'buscadores_black_{padroes}')
     builder.button(text='➕ 🟡', callback_data=f'buscadores_yellow_{padroes}')
     builder.button(text='➕ ⚪️', callback_data=f'buscadores_white_{padroes}')
+    builder.button(text='❌', callback_data=f'deletar_pedra_padrao_{padroes}')
     builder.button(text='⬅️ Voltar', callback_data='menu_padroes')
-    builder.adjust(3, 3, 1)
+    builder.adjust(3, 3, 1, 1)
     mostrar_padrao = usuario['salas'][sala]['estrategias']['padroes'][padroes]
     mostrar_padrao = str(mostrar_padrao).replace('[', '').replace(']', '').replace("'", '')
     mostrar_buscador = usuario['salas'][sala]['estrategias']['buscadores'][padroes]
@@ -531,7 +532,15 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
         usuario['salas'][sala]['estrategias']['gatilhos'][gatilho] = lista_gatilhos[:-1]
         utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
         await cadastrar_gatilho(message, gatilho, meu_id)
-
+    
+    if 'deletar_pedra_padrao_' in call.data:
+        padrao = call.data.replace('deletar_pedra_padrao_', '')
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        lista_paroes = usuario['salas'][sala]['estrategias']['padroes'][padrao]
+        usuario['salas'][sala]['estrategias']['padroes'][padrao] = lista_paroes[:-1]
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await cadastrar_padroes(message, padrao, meu_id)
 
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
