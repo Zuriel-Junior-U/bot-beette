@@ -136,11 +136,16 @@ async def process_cadastrar_usuario(message: Message, state: FSMContext) -> None
 async def final_cadastro_cliente(message: Message, state: FSMContext) -> None:
     await state.update_data(id_grup=message.text)
     data = await state.get_data()
-    utils_db.cadastrar_usuario(data['id_telegram'], data['id_grup'])
+    if data['id_telegram'].isdigit() and len(data['id_telegram']) <= 15:
+        utils_db.cadastrar_usuario(data['id_telegram'], data['id_grup'])
+        await message.answer(f"Usuário cadastrado como: {data['id_grup']}", 
+                            reply_markup=ReplyKeyboardRemove())
+    else:
+        await message.answer(f"ID invalido", 
+                        reply_markup=ReplyKeyboardRemove())
     await state.clear()
-    await message.answer(f"Usuário cadastrado como: {data['id_grup']}", 
-                         reply_markup=ReplyKeyboardRemove())
     await menu_admistrativo(message)
+    
 
 async def listar_usuarios(message: Message):
     builder = InlineKeyboardBuilder()
