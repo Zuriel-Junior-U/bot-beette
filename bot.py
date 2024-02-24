@@ -89,7 +89,7 @@ async def menu_configuracoes(message: Message, id_telegram):
     builder.button(text='📖 Padrões', callback_data='data')
     builder.button(text='⏰ Start Horario', callback_data='data')
     builder.button(text='⏰ Stop Horario', callback_data='data')
-    builder.button(text='✖️ Gales', callback_data='data')
+    builder.button(text='✖️ Gales', callback_data='menu_gales')
     builder.button(text='⏹ LMT', callback_data='data')
     builder.button(text=f'🔄 PLP: {sala['configuracoes']['pular_pedra_win']}', 
                    callback_data=f'modificar_plp_{usuario['sala_selecionada']}')
@@ -216,6 +216,20 @@ async def deletar_sala(sala, id_telegram, message: Message):
         utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
     await listar_salas(message, id_telegram)
 
+async def menu_gales(message: Message, valor):
+    builder = InlineKeyboardBuilder()
+    linhas = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    for numeros in linhas:
+        for numero in numeros:
+            builder.button(text=f'{numero}', 
+            callback_data=f'g_{numero}_v_{valor}')
+    builder.button(text='0', 
+                   callback_data=f'g_0_v_{valor}')
+    builder.button(text='🗑 Resetar', callback_data='resetar_gales')
+    builder.button(text='⬅️ Voltar', callback_data='menu_configuracoes')
+    builder.adjust(3, 3, 3, 2, 1)
+    await message.answer(text=f'Gales Atual: {valor}', reply_markup=builder.as_markup())
+
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
     meu_id = call.from_user.id
@@ -272,8 +286,30 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     if 'deletar_sala_' in call.data:
         sala = call.data.replace('deletar_sala_', '')
         await deletar_sala(sala, meu_id, message)
-
-
+    
+    if call.data == 'menu_gales':
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        gales_atual = usuario['salas'][sala]['configuracoes']['gales']
+        await menu_gales(message, gales_atual)
+    
+    if 'g_' in call.data:
+        valores = call.data.replace('_v_', '').replace('g_', '')
+        numero_digitado = int(valores[0:1])
+        numero_anterior = int(valores[1:])
+        valor_novo = numero_anterior + numero_digitado
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        usuario['salas'][sala]['configuracoes']['gales'] = valor_novo
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await menu_gales(message, valor_novo)
+    
+    if call.data == 'resetar_gales':
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        usuario['salas'][sala]['configuracoes']['gales'] = 0
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await menu_gales(message, 0)
     if not usuario_liberado:
         await call.message.answer('usuario não cadastrado')
         await command_start(message, state)
