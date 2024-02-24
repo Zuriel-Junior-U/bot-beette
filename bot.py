@@ -86,7 +86,7 @@ async def menu_configuracoes(message: Message, id_telegram):
                    callback_data=f'modificar_situacao_{usuario['sala_selecionada']}')
     builder.button(text=f'🔄 Sala: {usuario['sala_selecionada']}', callback_data='listar_salas')
     builder.button(text='📖 Gatilhos', callback_data='menu_gatilhos')
-    builder.button(text='📖 Padrões', callback_data='data')
+    builder.button(text='📖 Padrões', callback_data='menu_padroes')
     builder.button(text='⏰ Start Horario', callback_data='data')
     builder.button(text='⏰ Stop Horario', callback_data='data')
     builder.button(text='✖️ Gales', callback_data='menu_gales')
@@ -284,6 +284,52 @@ async def listar_gatilhos(message: Message, id_telegram):
     builder.adjust(3, repeat=True)
     await message.answer(text='Lista Gatilhos', reply_markup=builder.as_markup())
 
+async def menu_padroes(message: Message, id_telegram):
+    builder = InlineKeyboardBuilder()
+    usuario = utils_db.dados_usuario(id_telegram)
+    sala = usuario['sala_selecionada']
+    padroes = usuario['salas'][sala]['estrategias']['padroes']
+    builder.button(text='➕ Cadastrar Padroes', callback_data='cadastrar_padroes')
+    if padroes == {}:
+        return await message.answer(text='Menu Padroes', reply_markup=builder.as_markup())
+    builder.button(text='📖 Listar Padroes', callback_data='listar_padroes')
+    builder.button(text='⬅️ Voltar', callback_data='menu_configuracoes')
+    builder.adjust(1, repeat=True)
+    await message.answer(text='Menu Padroes', reply_markup=builder.as_markup())
+
+async def cadastrar_padroes(message: Message, padroes, id_telegram):
+    builder = InlineKeyboardBuilder()
+    usuario = utils_db.dados_usuario(id_telegram)
+    sala = usuario['sala_selecionada']
+    builder.button(text='➕ ⚫️', callback_data=f'padroes_black_{padroes}')
+    builder.button(text='➕ 🟡', callback_data=f'padroes_yellow_{padroes}')
+    builder.button(text='➕ ⚪️', callback_data=f'padroes_white_{padroes}')
+    builder.button(text='➕ ⚫️', callback_data=f'buscadores_black_{padroes}')
+    builder.button(text='➕ 🟡', callback_data=f'buscadores_yellow_{padroes}')
+    builder.button(text='➕ ⚪️', callback_data=f'buscadores_white_{padroes}')
+    builder.button(text='⬅️ Voltar', callback_data='menu_padroes')
+    builder.adjust(3, 3, 1)
+    mostrar_padrao = usuario['salas'][sala]['estrategias']['padroes'][padroes]
+    mostrar_padrao = str(mostrar_padrao).replace('[', '').replace(']', '').replace("'", '')
+    mostrar_buscador = usuario['salas'][sala]['estrategias']['buscadores'][padroes]
+    mostrar_buscador = str(mostrar_buscador).replace('[', '').replace(']', '').replace("'", '')
+    await message.answer(text=f'Padrão Atual: {mostrar_padrao}\nBuscador Atual: {mostrar_buscador}', 
+                         reply_markup=builder.as_markup())
+
+async def listar_padroes(message: Message, id_telegram):
+    builder = InlineKeyboardBuilder()
+    usuario = utils_db.dados_usuario(id_telegram)
+    sala = usuario['sala_selecionada']
+    padroes = usuario['salas'][sala]['estrategias']['padroes']
+    for padrao in padroes:
+        builder.button(text=f'{padrao}', callback_data='data')
+        builder.button(text='🗑', callback_data=f'deletar_pa_{padrao}')
+        builder.button(text='📝', callback_data=f'editar_pa_{padrao}')
+    builder.button(text='⬅️ Voltar', callback_data='menu_padroes')
+    builder.adjust(3, repeat=True)
+    await message.answer(text='Lista Padroes', reply_markup=builder.as_markup())
+
+
 @form_router.callback_query()
 async def my_call(call: types.CallbackQuery, state: FSMContext):
     meu_id = call.from_user.id
@@ -395,7 +441,7 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     if call.data == 'cadastrar_gatilho':
         usuario = utils_db.dados_usuario(meu_id)
         sala = usuario['sala_selecionada']
-        index_gatilho = len(usuario['salas'][sala]['estrategias']['gatilhos'])
+        index_gatilho = len(usuario['salas'][sala]['estrategias']['gatilhos']) 
         usuario['salas'][sala]['estrategias']['gatilhos'][f'g{index_gatilho}'] = []
         utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
         await cadastrar_gatilho(message, f'g{index_gatilho}', meu_id)
@@ -424,6 +470,54 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     if 'editar_ga_' in call.data:
         gatilho = call.data.replace('editar_ga_', '')
         await cadastrar_gatilho(message, gatilho, meu_id)
+    
+    if call.data == 'menu_padroes':
+        await menu_padroes(message, meu_id)
+    
+    if call.data == 'cadastrar_padroes':
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        index_padrao = len(usuario['salas'][sala]['estrategias']['padroes'])
+        usuario['salas'][sala]['estrategias']['padroes'][f'p{index_padrao}'] = []
+        usuario['salas'][sala]['estrategias']['buscadores'][f'p{index_padrao}'] = []
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await cadastrar_padroes(message, f'p{index_padrao}', meu_id)
+    
+    if 'padroes_' in call.data:
+        padrao = call.data.replace('padroes_', '')
+        padrao = padrao.replace('black_', '').replace('white_', '').replace('yellow_', '')
+        cor = call.data.replace('padroes_', '').replace(padrao, '').replace('_', '')
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        usuario['salas'][sala]['estrategias']['padroes'][padrao].append(cor)
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await cadastrar_padroes(message, padrao, meu_id)
+    
+    if 'buscadores_' in call.data:
+        buscador = call.data.replace('buscadores_', '')
+        buscador = buscador.replace('black_', '').replace('white_', '').replace('yellow_', '')
+        cor = call.data.replace('buscadores_', '').replace(buscador, '').replace('_', '')
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        usuario['salas'][sala]['estrategias']['buscadores'][buscador] = cor
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await cadastrar_padroes(message, buscador, meu_id)
+    
+    if call.data == 'listar_padroes':
+        await listar_padroes(message, meu_id)
+    
+    if 'deletar_pa_' in call.data:
+        padrao = call.data.replace('deletar_pa_', '')
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        usuario['salas'][sala]['estrategias']['padroes'].pop(padrao)
+        usuario['salas'][sala]['estrategias']['buscadores'].pop(padrao)
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await listar_padroes(message, meu_id)
+    
+    if 'editar_pa' in call.data:
+        padrao = call.data.replace('editar_pa_', '')
+        await cadastrar_padroes(message, padrao, meu_id)
 
 
     if not usuario_liberado:
