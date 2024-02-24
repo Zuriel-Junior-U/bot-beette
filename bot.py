@@ -262,8 +262,9 @@ async def cadastrar_gatilho(message: Message, gatilho, id_telegram):
     builder.button(text='➕ ⚫️', callback_data=f'gatilho_black_{gatilho}')
     builder.button(text='➕ 🟡', callback_data=f'gatilho_yellow_{gatilho}')
     builder.button(text='➕ ⚪️', callback_data=f'gatilho_white_{gatilho}')
+    builder.button(text='❌', callback_data=f'deletar_last_pedra_gatilho{gatilho}')
     builder.button(text='⬅️ Voltar', callback_data='menu_gatilhos')
-    builder.adjust(3, 1)
+    builder.adjust(4, 1)
     mostrar_gatilho = usuario['salas'][sala]['estrategias']['gatilhos'][gatilho]
     mostrar_gatilho = str(mostrar_gatilho).replace('[', '').replace(']', '').replace("'", '')
     await message.answer(text=f'Gatilho Atual: {mostrar_gatilho}', 
@@ -521,6 +522,15 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     if 'editar_pa' in call.data:
         padrao = call.data.replace('editar_pa_', '')
         await cadastrar_padroes(message, padrao, meu_id)
+    
+    if 'deletar_last_pedra_gatilho' in call.data:
+        gatilho = call.data.replace('deletar_last_pedra_gatilho', '')
+        usuario = utils_db.dados_usuario(meu_id)
+        sala = usuario['sala_selecionada']
+        lista_gatilhos = usuario['salas'][sala]['estrategias']['gatilhos'][gatilho]
+        usuario['salas'][sala]['estrategias']['gatilhos'][gatilho] = lista_gatilhos[:-1]
+        utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
+        await cadastrar_gatilho(message, gatilho, meu_id)
 
 
     if not usuario_liberado:
