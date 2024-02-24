@@ -291,6 +291,9 @@ async def menu_padroes(message: Message, id_telegram):
     padroes = usuario['salas'][sala]['estrategias']['padroes']
     builder.button(text='➕ Cadastrar Padroes', callback_data='cadastrar_padroes')
     if padroes == {}:
+        usuario['salas'][sala]['estrategias']['padroes'] = {'p0': []}
+        usuario['salas'][sala]['estrategias']['buscadores'] = {'p0': []}
+        utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
         return await message.answer(text='Menu Padroes', reply_markup=builder.as_markup())
     builder.button(text='📖 Listar Padroes', callback_data='listar_padroes')
     builder.button(text='⬅️ Voltar', callback_data='menu_configuracoes')
@@ -477,11 +480,12 @@ async def my_call(call: types.CallbackQuery, state: FSMContext):
     if call.data == 'cadastrar_padroes':
         usuario = utils_db.dados_usuario(meu_id)
         sala = usuario['sala_selecionada']
-        index_padrao = len(usuario['salas'][sala]['estrategias']['padroes'])
-        usuario['salas'][sala]['estrategias']['padroes'][f'p{index_padrao}'] = []
-        usuario['salas'][sala]['estrategias']['buscadores'][f'p{index_padrao}'] = []
+        lista_pds = [pd for pd in usuario['salas'][sala]['estrategias']['padroes']][-1]
+        index_atual = int(lista_pds.replace('p', '')) + 1
+        usuario['salas'][sala]['estrategias']['padroes'][f'p{index_atual}'] = []
+        usuario['salas'][sala]['estrategias']['buscadores'][f'p{index_atual}'] = []
         utils_db.atualizar_usuario(meu_id, 'dados_usuario', json.dumps(usuario))
-        await cadastrar_padroes(message, f'p{index_padrao}', meu_id)
+        await cadastrar_padroes(message, f'p{index_atual}', meu_id)
     
     if 'padroes_' in call.data:
         padrao = call.data.replace('padroes_', '')
