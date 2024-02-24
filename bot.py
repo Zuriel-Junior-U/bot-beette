@@ -152,9 +152,8 @@ async def listar_usuarios(message: Message):
     for usuario in usuarios:
         builder.button(text=f'{usuario[0]}', callback_data='data')
         builder.button(text='🗑', callback_data=f'deletar_usuario_{usuario[0]}')
-        builder.adjust(2)
     builder.button(text='⬅️ Voltar', callback_data='meu_admistrativo')
-    builder.adjust(1)
+    builder.adjust(2,repeat=True)
     await message.answer(text='Lista de Clientes', reply_markup=builder.as_markup())
 
 async def cadastrar_sala(message: Message, state: FSMContext):
