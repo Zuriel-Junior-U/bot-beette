@@ -39,8 +39,6 @@ class Form(StatesGroup):
 dados_salas = {
     'configuracoes': {
         'gales': 0,
-        'start_horario': ['Desativado', ''],
-        'stop_horario': ['Desativado', ''],
         'limite_wins': 1,
         'pular_pedra_win': 'Sim',
         'situacao': 'Desligado',
@@ -87,15 +85,13 @@ async def menu_configuracoes(message: Message, id_telegram):
     builder.button(text=f'🔄 Sala: {usuario['sala_selecionada']}', callback_data='listar_salas')
     builder.button(text='📖 Gatilhos', callback_data='menu_gatilhos')
     builder.button(text='📖 Padrões', callback_data='menu_padroes')
-    builder.button(text='⏰ Start Horario', callback_data='data')
-    builder.button(text='⏰ Stop Horario', callback_data='data')
     builder.button(text='✖️ Gales', callback_data='menu_gales')
     builder.button(text='⏹ LMT', callback_data='menu_lmt')
     builder.button(text=f'🔄 PLP: {sala['configuracoes']['pular_pedra_win']}', 
                    callback_data=f'modificar_plp_{usuario['sala_selecionada']}')
     builder.button(text='➕ Cadastrar Sala', callback_data='cadastrar_sala')
     builder.button(text='⬅️ Voltar', callback_data='menu_principal')
-    builder.adjust(2, 2, 2, 2, 2, 1)
+    builder.adjust(2, 2, 2, 2, 1)
     await message.answer(text='Menu Configurações', reply_markup=builder.as_markup())
 
 async def verificar_usuario(id_telegram):
