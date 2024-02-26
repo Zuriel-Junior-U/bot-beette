@@ -36,6 +36,7 @@ def sala(dados: dict):
             if resultados['lista_cores'][-len(padroes[padrao]): ] == padroes[padrao]:
                 return True, padroes[padrao], buscadores[padrao]
         return False, False, False
+
     
     while True:
         giro()
@@ -44,7 +45,12 @@ def sala(dados: dict):
             print('bateu o gatilho')
             wins = 0
             while wins <= dados['configuracoes']['limite_wins']:
-                ...
+                padroes = verificar_padroes()
+                if padroes[0]:
+                    print(f'Entrar no {padroes[2]}')
+                giro()
+
+
 
 if __name__ == '__main__':
     dados = {}
