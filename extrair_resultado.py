@@ -25,7 +25,7 @@ def puxar_resultado(casa, id_casa):
         for event in client.events():
             if 'id' in str(event.data):
                 resultado = json.loads(event.data)[0]
-                utils.atualizar_resultados(casa, str(resultado))
+                utils.atualizar_resultados(casa, json.dumps(resultado))
     else:
         print("Erro na solicitação:", response.status_code)
 

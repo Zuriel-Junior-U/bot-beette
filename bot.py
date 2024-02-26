@@ -193,15 +193,18 @@ async def modificar_situacao(id_telegram, sala):
     usuario = utils_db.dados_usuario(id_telegram)
     situacao = usuario['salas'][sala]['configuracoes']['situacao']
     if situacao == 'Desligado':
-        processo_sala = multiprocessing.Process(target=sinais.sala)
+        processo_sala = multiprocessing.Process(target=sinais.sala, args=(usuario['salas'][sala],))
         processo_sala.start()
         usuario['salas'][sala]['pid_name'] = processo_sala.pid
         usuario['salas'][sala]['configuracoes']['situacao'] = 'Ligado'
     else:
         pid = usuario['salas'][sala]['pid_name']
-        processo_sala = psutil.Process(pid)
-        if processo_sala.is_running():
-            os.kill(pid, signal.SIGTERM)
+        try:
+            processo_sala = psutil.Process(pid)
+            if processo_sala.is_running():
+                os.kill(pid, signal.SIGTERM)
+        except:
+            pass
         usuario['salas'][sala]['configuracoes']['situacao'] = 'Desligado'
     utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
 
