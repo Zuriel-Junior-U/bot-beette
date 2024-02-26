@@ -193,7 +193,7 @@ async def modificar_situacao(id_telegram, sala):
     usuario = utils_db.dados_usuario(id_telegram)
     situacao = usuario['salas'][sala]['configuracoes']['situacao']
     if situacao == 'Desligado':
-        processo_sala = multiprocessing.Process(target=sinais.sala, args=(usuario['salas'][sala],))
+        processo_sala = multiprocessing.Process(target=sinais.sala, args=(usuario['salas'][sala], sala,))
         processo_sala.start()
         usuario['salas'][sala]['pid_name'] = processo_sala.pid
         usuario['salas'][sala]['configuracoes']['situacao'] = 'Ligado'
