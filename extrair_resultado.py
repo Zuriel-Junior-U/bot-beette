@@ -32,4 +32,7 @@ def puxar_resultado(casa, id_casa):
 
 if __name__ == '__main__':
     while True:
-        puxar_resultado('beette', '647f2d0230696c7329011c01')
+        try:
+            puxar_resultado('beette', '647f2d0230696c7329011c01')
+        except:
+            ...
