@@ -8,7 +8,7 @@
 <p align="center">
  <a href="#pré-requisitos">Pré-requisitos</a> •
  <a href="#instalação">Instalação</a> • 
- <a href="#tecnologias">Tecnologias</a> • 
+ <a href="#tecnologias">Tecnologias</a>
 </p>
 
 <h4 align="center"> 
