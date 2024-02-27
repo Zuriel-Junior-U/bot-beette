@@ -1,5 +1,7 @@
+import multiprocessing
 import asyncio
 import logging
+import signal
 import json
 import sys
 import os
@@ -20,8 +22,10 @@ from aiogram.types import (
 )
 
 import dotenv
+import psutil
 
 import utils_db
+import sinais
 
 
 dotenv.load_dotenv()
@@ -37,6 +41,7 @@ class Form(StatesGroup):
     id_sala = State()
 
 dados_salas = {
+    'pid_name' : '',
     'configuracoes': {
         'gales': 0,
         'limite_wins': 1,
@@ -188,8 +193,18 @@ async def modificar_situacao(id_telegram, sala):
     usuario = utils_db.dados_usuario(id_telegram)
     situacao = usuario['salas'][sala]['configuracoes']['situacao']
     if situacao == 'Desligado':
+        processo_sala = multiprocessing.Process(target=sinais.sala, args=(usuario['salas'][sala], sala,))
+        processo_sala.start()
+        usuario['salas'][sala]['pid_name'] = processo_sala.pid
         usuario['salas'][sala]['configuracoes']['situacao'] = 'Ligado'
     else:
+        pid = usuario['salas'][sala]['pid_name']
+        try:
+            processo_sala = psutil.Process(pid)
+            if processo_sala.is_running():
+                os.kill(pid, signal.SIGTERM)
+        except:
+            pass
         usuario['salas'][sala]['configuracoes']['situacao'] = 'Desligado'
     utils_db.atualizar_usuario(id_telegram, 'dados_usuario', json.dumps(usuario))
 
