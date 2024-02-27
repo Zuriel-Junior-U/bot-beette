@@ -9,9 +9,6 @@
  <a href="#pré-requisitos">Pré-requisitos</a> •
  <a href="#instalação">Instalação</a> • 
  <a href="#tecnologias">Tecnologias</a> • 
- <a href="#contribuicao">Contribuição</a> • 
- <a href="#licenc-a">Licença</a> • 
- <a href="#autor">Autor</a>
 </p>
 
 <h4 align="center"> 
@@ -60,4 +57,5 @@ As seguintes ferramentas foram usadas na construção do projeto:
 - [Telebot](https://pypi.org/project/telebot/)
 - [Requests](https://requests.readthedocs.io/en/latest/)
 - [sseclient](https://pypi.org/project/sseclient-py/)
+- [python-dotenv](https://pypi.org/project/python-dotenv/)
 
